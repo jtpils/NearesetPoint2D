@@ -8,6 +8,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <cv.hpp>
+#include <chrono>
 
 using std::cout;
 using std::endl;
@@ -18,7 +19,6 @@ int main() {
     cv::Mat image_DeathNote(image.size(), CV_8UC1, cv::Scalar::all(1));
     int rows = image.rows;
     int cols = image.cols;
-    cout << "image.size is " << image.size() << endl;
     for (int i = 0; i < rows; ++i) {
         for (int j = 0; j < cols; ++j) {
             if (image.at<cv::Vec3b>(i, j) != cv::Vec3b(55, 80, 156)) {
@@ -38,12 +38,14 @@ int main() {
     // 然后4个被感染的人再次自爆去感染它四周的人。这样，经过多轮自爆后，毒气慢慢地就会延伸到“神”所在的区域，
     // 找出第一个被感染的“神”是谁
     std::queue<cv::Point2i> vZombiePixels; // 已经感染毒气，但还没自爆的（也就是还没死的）僵尸的集合
-    cv::Point2i seedPt(920, 1475);  // 第一个被下蛊虫的人
+    cv::Point2i seedPt(920, 1275);  // 第一个被下蛊虫的人
+    std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
     if (image.at<cv::Vec3b>(seedPt.x, seedPt.y) != mortal) {
         // 如果第一个被感染的人恰好是神，那不用找了，直接是它
         cami = cv::Point2i(seedPt.x, seedPt.y);
     } else {
         vZombiePixels.push(seedPt);
+        image_DeathNote.at<uchar>(seedPt.x, seedPt.y) = 0;
     }
 
     // 还有僵尸没自爆。因为到最后我们肯定是需要所有人都感染病毒而死，并且死了后马上爆炸，炸得整幅图渣都不剩.除非已经找到了一个神
@@ -83,6 +85,7 @@ int main() {
 
             if (image_DeathNote.at<uchar>(x - 1, y) == 1) {
                 vZombiePixels.emplace(x - 1, y);
+                image_DeathNote.at<uchar>(x - 1, y) = 0;
             }
         }
 
@@ -94,6 +97,7 @@ int main() {
 
             if (image_DeathNote.at<uchar>(x + 1, y) == 1) {
                 vZombiePixels.emplace(x + 1, y);
+                image_DeathNote.at<uchar>(x + 1, y) = 0;
             }
         }
 
@@ -105,6 +109,7 @@ int main() {
 
             if (image_DeathNote.at<uchar>(x, y - 1) == 1) {
                 vZombiePixels.emplace(x, y - 1);
+                image_DeathNote.at<uchar>(x, y - 1) = 0;
             }
         }
 
@@ -116,10 +121,13 @@ int main() {
 
             if (image_DeathNote.at<uchar>(x, y + 1) == 1) {
                 vZombiePixels.emplace(x, y + 1);
+                image_DeathNote.at<uchar>(x, y + 1) = 0;
             }
         }
     }
-
+    std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
+    double ttrack = std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
+    cout << "ttrack = " << ttrack << endl << endl;
     cout << "cami is " << cami << endl;
     cout << "image.at<cv::Vec3b>(cami) is " << image.at<cv::Vec3b>(cami.x, cami.y) << endl;
     cv::circle(image, cv::Point2i(seedPt.y, seedPt.x), 5, cv::Scalar(100, 200, 0));

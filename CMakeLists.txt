@@ -8,3 +8,6 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 
 add_executable(NearestPoint2D main.cpp)
 target_link_libraries(NearestPoint2D ${OpenCV_LIBS})
+
+add_executable(Classify Classify.cpp)
+target_link_libraries(Classify ${OpenCV_LIBS})
